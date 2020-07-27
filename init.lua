@@ -638,7 +638,9 @@ function CommDKP:OnInitialize(event, name)		-- This is the FIRST function to run
 
 	if(event == "ADDON_LOADED") then
 		C_Timer.After(5, function ()
+			print("Before CreateMenu: "..tostring(time()));
 			core.CommDKPUI = CommDKP.UIConfig or CommDKP:CreateMenu();		-- creates main menu after 5 seconds (trying to initialize after raid frames are loaded)
+			print("After CreateMenu: "..tostring(time()));
 			core.KeyEventUI = CreateFrame("Frame","KeyEventFrame", UIParent);
 			core.KeyEventUI:SetScript("OnKeyDown", function(self, key)
 				if core.Initialized then
@@ -668,6 +670,7 @@ function CommDKP:OnInitialize(event, name)		-- This is the FIRST function to run
 				end
 			end);
 			core.KeyEventUI:SetPropagateKeyboardInput(true);
+			print("After ADDON_LOADED Timer: "..tostring(time()));
 		end)
 		------------------------------------------------
 		-- Verify DB Schemas
@@ -696,9 +699,11 @@ function CommDKP:OnInitialize(event, name)		-- This is the FIRST function to run
 		core.WorkingTable 		= CommDKP:GetTable(CommDKP_DKPTable, true); -- imports full DKP table to WorkingTable for list manipulation
 		core.PriceTable			= CommDKP:GetTable(CommDKP_MinBids, true);
 
+		CommDKP:InitializeDKPTableIndex()
+
 		for i=1, #core.WorkingTable do
 			local CurPlayer = core.WorkingTable[i].player;
-			local search = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), CurPlayer);
+			local search = core.DKPTableIndex[CurPlayer];
 
 			if search then
 				--Set Version Info on Legacy Record First
@@ -707,12 +712,10 @@ function CommDKP:OnInitialize(event, name)		-- This is the FIRST function to run
 			end
 		end
 
-
 		if not CommDKP:GetTable(CommDKP_DKPHistory, true).seed then CommDKP:GetTable(CommDKP_DKPHistory, true).seed = 0 end
 		if not CommDKP:GetTable(CommDKP_Loot, true).seed then CommDKP:GetTable(CommDKP_Loot, true).seed = 0 end
 		if CommDKP:GetTable(CommDKP_DKPTable, true).seed then CommDKP:GetTable(CommDKP_DKPTable, true).seed = nil end
-
-
+		
 		core.CurrentRaidZone	= core.DB.bossargs.CurrentRaidZone;	-- stores raid zone as a redundency
 		core.LastKilledBoss 	= core.DB.bossargs.LastKilledBoss;	-- stores last boss killed as a redundency
 		core.LastKilledNPC		= core.DB.bossargs.LastKilledNPC 		-- Stores last 30 mobs killed in raid.

@@ -408,6 +408,30 @@ function CommDKP:LootHistory_Reset()
 		end
 	end
 end
+function CommDKP:GetItemId(lootLink)
+	local _, _, _, _, itemId, _, _, _, _, _, _, _, _, _ = string.find(lootLink,"|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*):?(%-?%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?")
+	return itemId;
+end
+
+function CommDKP:InsertLootHistoryIndex(lootHistory)
+
+	if core.LootHistoryIndex == nil then
+		core.LootHistoryIndex = {}
+	end
+
+	--Validate that the value is ACTUALLY an item link.
+	local itemString = string.match(lootHistory.loot, "item[%-?%d:]+")
+
+	if itemString then
+		if core.LootHistoryIndex[CommDKP:GetItemId(lootHistory.loot)] == nil then
+			core.LootHistoryIndex[CommDKP:GetItemId(lootHistory.loot)] = {}
+		end
+	
+		core.LootHistoryIndex[CommDKP:GetItemId(lootHistory.loot)][lootHistory.date] = lootHistory;
+		return true;
+	end
+	return false;
+end
 
 local LootHistTimer = LootHistTimer or CreateFrame("StatusBar", nil, UIParent)
 function CommDKP:LootHistory_Update(filter)				-- if "filter" is included in call, runs set assigned for when a filter is selected in dropdown.
@@ -430,7 +454,8 @@ function CommDKP:LootHistory_Update(filter)				-- if "filter" is included in cal
 	if filter and filter ~= L["NOFILTER"] and filter ~= L["DELETEDENTRY"] then
 		-- items or players
 		for i=1, #CommDKP:GetTable(CommDKP_Loot, true) do
-			if curDropDownMenuFilterCategory == L["PLAYERS"] then
+			
+			if CommDKP:InsertLootHistoryIndex(CommDKP:GetTable(CommDKP_Loot, true)[i]) and curDropDownMenuFilterCategory == L["PLAYERS"] then
 				if not CommDKP:GetTable(CommDKP_Loot, true)[i].deletes and not CommDKP:GetTable(CommDKP_Loot, true)[i].deletedby and not CommDKP:GetTable(CommDKP_Loot, true)[i].hidden and CommDKP:GetTable(CommDKP_Loot, true)[i].player == filter then
 					table.insert(LootTable, CommDKP:GetTable(CommDKP_Loot, true)[i])
 				end
@@ -442,13 +467,13 @@ function CommDKP:LootHistory_Update(filter)				-- if "filter" is included in cal
 		end
 	elseif filter and filter == L["DELETEDENTRY"] then
 		for i=1, #CommDKP:GetTable(CommDKP_Loot, true) do
-			if CommDKP:GetTable(CommDKP_Loot, true)[i].deletes then
+			if CommDKP:InsertLootHistoryIndex(CommDKP:GetTable(CommDKP_Loot, true)[i]) and CommDKP:GetTable(CommDKP_Loot, true)[i].deletes then
 				table.insert(LootTable, CommDKP:GetTable(CommDKP_Loot, true)[i])
 			end
 		end
 	else -- no filter
 		for i=1, #CommDKP:GetTable(CommDKP_Loot, true) do
-			if not CommDKP:GetTable(CommDKP_Loot, true)[i].deletes and not CommDKP:GetTable(CommDKP_Loot, true)[i].deletedby and not CommDKP:GetTable(CommDKP_Loot, true)[i].hidden then
+			if CommDKP:InsertLootHistoryIndex(CommDKP:GetTable(CommDKP_Loot, true)[i]) and not CommDKP:GetTable(CommDKP_Loot, true)[i].deletes and not CommDKP:GetTable(CommDKP_Loot, true)[i].deletedby and not CommDKP:GetTable(CommDKP_Loot, true)[i].hidden then
 				table.insert(LootTable, CommDKP:GetTable(CommDKP_Loot, true)[i])
 			end
 		end
@@ -625,24 +650,39 @@ function CommDKP:LootHistory_Update(filter)				-- if "filter" is included in cal
 		    				tooltip:AddLine("|c"..col.hex..bidder.."|r: |cffff0000"..path2.."|r")
 		    			end
 		    		end
-		    	end
-		    	for j=1, #CommDKP:GetTable(CommDKP_Loot, true) do
-		    		if CommDKP:GetTable(CommDKP_Loot, true)[j]["loot"] == itemToLink and LootTable[i].date ~= CommDKP:GetTable(CommDKP_Loot, true)[j].date and not CommDKP:GetTable(CommDKP_Loot, true)[j].deletedby and not CommDKP:GetTable(CommDKP_Loot, true)[j].deletes then
-		    			local col;
-		    			local s = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), CommDKP:GetTable(CommDKP_Loot, true)[j].player)
-		    			if s then
-		    				col = CommDKP:GetCColors(CommDKP:GetTable(CommDKP_DKPTable, true)[s[1][1]].class)
-		    			else
-		    				col = { hex="ff444444" }
-		    			end
-		    			if history == 0 then
-		    				tooltip:AddLine(" ");
-		    				tooltip:AddLine(L["ALSOWONBY"]..":", 0.25, 0.75, 0.90, 1, true);
-		    				history = 1;
-		    			end
-		    			tooltip:AddDoubleLine("|c"..col.hex..CommDKP:GetTable(CommDKP_Loot, true)[j].player.."|r |cffffffff("..date("%m/%d/%y", CommDKP:GetTable(CommDKP_Loot, true)[j].date)..")|r", "|cffff0000"..-CommDKP:GetTable(CommDKP_Loot, true)[j].cost.." "..L["DKP"].."|r", 1.0, 0, 0)
-		    		end
-		    	end
+				end
+
+				local lootIndex = core.LootHistoryIndex[CommDKP:GetItemId(itemToLink)];
+				local winTable = {}
+
+				for k,lootInfo in pairs(lootIndex) do
+					tinsert(winTable,lootInfo);
+				end
+
+				table.sort(winTable, function(a, b)
+					return a.date > b.date
+				end);
+
+				for j=1, #winTable do
+					if LootTable[i].date ~= winTable[j].date then
+						if not winTable[j].deletedby and not winTable[j].deletes then
+							local col;
+							local s = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), winTable[j].player)
+							if s then
+								col = CommDKP:GetCColors(CommDKP:GetTable(CommDKP_DKPTable, true)[s[1][1]].class)
+							else
+								col = { hex="ff444444" }
+							end
+							if history == 0 then
+								tooltip:AddLine(" ");
+								tooltip:AddLine(L["ALSOWONBY"]..":", 0.25, 0.75, 0.90, 1, true);
+								history = 1;
+							end
+							tooltip:AddDoubleLine("|c"..col.hex..winTable[j].player.."|r |cffffffff("..date("%m/%d/%y", winTable[j].date)..")|r", "|cffff0000"..-winTable[j].cost.." "..L["DKP"].."|r", 1.0, 0, 0)
+						end
+					end
+				end
+
 			    if filter == L["DELETEDENTRY"] then
 			    	local delOfficer,_ = strsplit("-", CommDKP:GetTable(CommDKP_Loot, true)[del_search[1][1]].deletedby)
 			    	local col
@@ -657,7 +697,8 @@ function CommDKP:LootHistory_Update(filter)				-- if "filter" is included in cal
 			    	tooltip:AddLine(" ")
 			    	tooltip:AddLine(L["DELETEDBY"], 0.25, 0.75, 0.90, 1, true)
 			    	tooltip:AddDoubleLine("|c"..col.hex..delOfficer.."|r", del_date2.."/"..del_date3.."/"..del_date1.." @ "..strtrim(strsub(del_date, 10), " "),1,0,0,1,1,1)
-			    end
+				end
+				
 			    tooltip:AddLine(" ")
 			    tooltip:AddDoubleLine(L["AWARDEDBY"], "|c"..c.hex..awardOfficer.."|r", 0.25, 0.75, 0.90)
 		    	tooltip:Show();

@@ -39,7 +39,7 @@ local function Roll_OnEvent(self, event, arg1, ...)
     pattern = string.gsub(pattern, "%%d", "%(%%d+%)")
 
     for name, roll, low, high in string.gmatch(arg1, pattern) do
-      local search = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), name)
+      local search = core.DKPTableIndex[name];
       local minRoll;
           local maxRoll;
 
@@ -47,14 +47,14 @@ local function Roll_OnEvent(self, event, arg1, ...)
             if core.DB.modes.rolls.min == 0 or core.DB.modes.rolls.min == 1 then
               minRoll = 1;
             else
-              minRoll = CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]].dkp * (core.DB.modes.rolls.min / 100);
+              minRoll = search.dkp * (core.DB.modes.rolls.min / 100);
             end
-            maxRoll = CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]].dkp * (core.DB.modes.rolls.max / 100) + core.DB.modes.rolls.AddToMax;
+            maxRoll = search.dkp * (core.DB.modes.rolls.max / 100) + core.DB.modes.rolls.AddToMax;
           elseif not core.DB.modes.rolls.UsePerc then
             minRoll = core.DB.modes.rolls.min;
 
             if core.DB.modes.rolls.max == 0 then
-              maxRoll = CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]].dkp + core.DB.modes.rolls.AddToMax;
+              maxRoll = search.dkp + core.DB.modes.rolls.AddToMax;
             else
               maxRoll = core.DB.modes.rolls.max + core.DB.modes.rolls.AddToMax;
             end
@@ -68,8 +68,8 @@ local function Roll_OnEvent(self, event, arg1, ...)
 
           --math.floor(minRoll).."-"..math.floor(maxRoll)
 
-      if search and mode == "Roll Based Bidding" and core.BiddingWindow.cost:GetNumber() > CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]].dkp and not core.DB.modes.SubZeroBidding and core.DB.modes.costvalue ~= "Percent" then
-            SendChatMessage(L["ROLLNOTACCEPTED"].." "..CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]].dkp.." "..L["DKP"]..".", "WHISPER", nil, name)
+      if search and mode == "Roll Based Bidding" and core.BiddingWindow.cost:GetNumber() > search.dkp and not core.DB.modes.SubZeroBidding and core.DB.modes.costvalue ~= "Percent" then
+            SendChatMessage(L["ROLLNOTACCEPTED"].." "..search.dkp.." "..L["DKP"]..".", "WHISPER", nil, name)
 
             return;
             end
@@ -1126,7 +1126,7 @@ function CommDKP:BidScrollFrame_Update()
     for i=1, showRows do
         row = core.BiddingWindow.bidTable.Rows[i]
         index = offset + i
-        local dkp_total = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), Bids_Submitted[i].player)
+        local dkp_total = core.DKPTableIndex[Bids_Submitted.player];
         local c = CommDKP:GetCColors(CommDKP:GetTable(CommDKP_DKPTable, true)[dkp_total[1][1]].class)
         rank = CommDKP:GetGuildRank(Bids_Submitted[i].player)
         if Bids_Submitted[index] then
@@ -1146,14 +1146,14 @@ function CommDKP:BidScrollFrame_Update()
                 if core.DB.modes.rolls.min == 0 or core.DB.modes.rolls.min == 1 then
                   minRoll = 1;
                 else
-                  minRoll = CommDKP:GetTable(CommDKP_DKPTable, true)[dkp_total[1][1]].dkp * (core.DB.modes.rolls.min / 100);
+                  minRoll = dkp_total.dkp * (core.DB.modes.rolls.min / 100);
                 end
-                maxRoll = CommDKP:GetTable(CommDKP_DKPTable, true)[dkp_total[1][1]].dkp * (core.DB.modes.rolls.max / 100) + core.DB.modes.rolls.AddToMax;
+                maxRoll = dkp_total.dkp * (core.DB.modes.rolls.max / 100) + core.DB.modes.rolls.AddToMax;
               elseif not core.DB.modes.rolls.UsePerc then
                 minRoll = core.DB.modes.rolls.min;
 
                 if core.DB.modes.rolls.max == 0 then
-                  maxRoll = CommDKP:GetTable(CommDKP_DKPTable, true)[dkp_total[1][1]].dkp + core.DB.modes.rolls.AddToMax;
+                  maxRoll = dkp_total.dkp + core.DB.modes.rolls.AddToMax;
                 else
                   maxRoll = core.DB.modes.rolls.max + core.DB.modes.rolls.AddToMax;
                 end

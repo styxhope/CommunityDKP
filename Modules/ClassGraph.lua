@@ -20,10 +20,10 @@ function CommDKP:ClassGraph()
 	local BarWidth = 25
 
 	for k, v in pairs(core.classes) do
-		local classSearch = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), v)
+		local classSearch = core.DKPTableIndex[v];
 		if classSearch and #classSearch > 0 then
 			tinsert(classCount, #classSearch)
-			local classPerc = CommDKP_round(#classSearch / #CommDKP:GetTable(CommDKP_DKPTable, true), 4);
+			local classPerc = CommDKP_round(#classSearch / #core.DKPTableIndex, 4);
 			tinsert(perc, classPerc * 100)
 			local adjustBar = BarMaxHeight * classPerc;
 			tinsert(perc_height, adjustBar)
@@ -90,10 +90,10 @@ function CommDKP:ClassGraph_Update()
 	local BarWidth = 25
 
 	for k, v in pairs(core.classes) do
-		local classSearch = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), v)
+		local classSearch = core.DKPTableIndex[v];
 		if classSearch and #classSearch > 0 then
 			tinsert(classCount, #classSearch)
-			local classPerc = CommDKP_round(#classSearch / #CommDKP:GetTable(CommDKP_DKPTable, true), 4);
+			local classPerc = CommDKP_round(#classSearch / #core.DKPTableIndex, 4);
 			tinsert(perc, classPerc * 100)
 			local adjustBar = BarMaxHeight * classPerc;
 			tinsert(perc_height, adjustBar)

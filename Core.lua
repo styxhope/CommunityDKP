@@ -126,6 +126,8 @@ core.CenterSort = "class";
 core.OOD = false
 core.RealmName = nil;
 core.FactionName = nil;
+core.LootHistoryIndex = nil;
+core.DKPTableIndex = nil;
 
 function CommDKP:GetCColors(class)
 	if core.CColors then 
@@ -306,10 +308,10 @@ function CommDKP:GetThemeColor()
 end
 
 function CommDKP:GetPlayerDKP(player)
-	local search = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), player)
+	local search = core.DKPTableIndex[player];
 
 	if search then
-		return CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]].dkp
+		return search.dkp
 	else
 		return false;
 	end
@@ -733,7 +735,7 @@ end
 function CommDKP:SendTalentsAndRole()
 
 	--Does a Profile Exist? If no, exit, nothing to do here.
-	local oldProfile = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), UnitName("player"), "player")
+	local oldProfile = core.DKPTableIndex[UnitName("player")];
 	local newProfile = CommDKP:GetTable(CommDKP_Profiles, true)[UnitName("player")]
 	if newProfile == nil and not oldProfile then
 		return;
@@ -757,7 +759,7 @@ function CommDKP:SendTalentsAndRole()
 	CommDKP:GetTable(CommDKP_Profiles, true)[UnitName("player")] = profile;
 
 	if oldProfile then
-		CommDKP:GetTable(CommDKP_DKPTable, true)[oldProfile[1][1]].version = core.SemVer;
+		oldProfile.version = core.SemVer;
 	end
 
 	CommDKP.Sync:SendData("CDKProfileSend", profile)
@@ -906,19 +908,19 @@ function CommDKP:TableStrFind(tar, val, field)              -- same function as 
 end
 
 function CommDKP:DKPTable_Set(tar, field, value, loot)                -- updates field with value where tar is found (IE: CommDKP:DKPTable_Set("Vapok", "dkp", 10) adds 10 dkp to user Vapok). loot = true/false if it's to alter lifetime_spent
-	local result = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), tar);
-	for i=1, #result do
-		local current = CommDKP:GetTable(CommDKP_DKPTable, true)[result[i][1]][field];
-		if(field == "dkp") then
-			CommDKP:GetTable(CommDKP_DKPTable, true)[result[i][1]][field] = CommDKP_round(tonumber(current + value), core.DB.modes.rounding)
-			if value > 0 and loot == false then
-				CommDKP:GetTable(CommDKP_DKPTable, true)[result[i][1]]["lifetime_gained"] = CommDKP_round(tonumber(CommDKP:GetTable(CommDKP_DKPTable, true)[result[i][1]]["lifetime_gained"] + value), core.DB.modes.rounding)
-			elseif value < 0 and loot == true then
-				CommDKP:GetTable(CommDKP_DKPTable, true)[result[i][1]]["lifetime_spent"] = CommDKP_round(tonumber(CommDKP:GetTable(CommDKP_DKPTable, true)[result[i][1]]["lifetime_spent"] + value), core.DB.modes.rounding)
-			end
-		else
-			CommDKP:GetTable(CommDKP_DKPTable, true)[result[i][1]][field] = value
+	local result = core.DKPTableIndex[tar];
+
+	local current = result[field];
+	if(field == "dkp") then
+		result[field] = CommDKP_round(tonumber(current + value), core.DB.modes.rounding)
+		if value > 0 and loot == false then
+			result["lifetime_gained"] = CommDKP_round(tonumber(result["lifetime_gained"] + value), core.DB.modes.rounding)
+		elseif value < 0 and loot == true then
+			result["lifetime_spent"] = CommDKP_round(tonumber(result["lifetime_spent"] + value), core.DB.modes.rounding)
 		end
+	else
+		result[field] = value
 	end
+
 	CommDKP:DKPTable_Update()
 end

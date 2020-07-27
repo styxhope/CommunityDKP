@@ -13,7 +13,7 @@ function CommDKP:AutoAward(phase, amount, reason) -- phase identifies who to awa
 		if phase == 1 or phase == 3 then
 			for i=1, 40 do
 				local tempName, _rank, _subgroup, _level, _class, _fileName, zone, online = GetRaidRosterInfo(i)
-				local search_DKP = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), tempName)
+				local search_DKP = core.DKPTableIndex[tempName];
 				local OnlineOnly = core.DB.modes.OnlineOnly
 				local limitToZone = core.DB.modes.SameZoneOnly
 				local isSameZone = zone == GetRealZoneText()

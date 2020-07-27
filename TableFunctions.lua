@@ -110,9 +110,9 @@ local function DisplayUserHistory(self, player)
 
 	PlayerSearch = CommDKP:TableStrFind(CommDKP:GetTable(CommDKP_DKPHistory, true), player, "players")
 	PlayerSearch2 = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_Loot, true), player, "player")
-	LifetimeSearch = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), player, "player")
+	LifetimeSearch = core.DKPTableIndex[player]
 
-	c = CommDKP:GetCColors(CommDKP:GetTable(CommDKP_DKPTable, true)[LifetimeSearch[1][1]].class)
+	c = CommDKP:GetCColors(LifetimeSearch.class);
 
 	GameTooltip:SetOwner(self, "ANCHOR_RIGHT", 0, 0);
 	GameTooltip:SetText(L["RECENTHISTORYFOR"].." |c"..c.hex..player.."|r\n", 0.25, 0.75, 0.90, 1, true);
@@ -163,8 +163,8 @@ local function DisplayUserHistory(self, player)
 			end
 		end
 		GameTooltip:AddDoubleLine(" ", " ", 1.0, 1.0, 1.0);
-		GameTooltip:AddLine("  |cff00ff00"..L["LIFETIMEEARNED"]..": "..CommDKP_round(CommDKP:GetTable(CommDKP_DKPTable, true)[LifetimeSearch[1][1]].lifetime_gained, core.DB.modes.rounding).."|r", 1.0, 1.0, 1.0, true);
-		GameTooltip:AddLine("  |cffff0000"..L["LIFETIMESPENT"]..": "..CommDKP_round(CommDKP:GetTable(CommDKP_DKPTable, true)[LifetimeSearch[1][1]].lifetime_spent, core.DB.modes.rounding).."|r", 1.0, 1.0, 1.0, true);
+		GameTooltip:AddLine("  |cff00ff00"..L["LIFETIMEEARNED"]..": "..CommDKP_round(LifetimeSearch.lifetime_gained, core.DB.modes.rounding).."|r", 1.0, 1.0, 1.0, true);
+		GameTooltip:AddLine("  |cffff0000"..L["LIFETIMESPENT"]..": "..CommDKP_round(LifetimeSearch.lifetime_spent, core.DB.modes.rounding).."|r", 1.0, 1.0, 1.0, true);
 	else
 		GameTooltip:AddLine("No DKP Entries", 1.0, 1.0, 1.0, true);
 	end
@@ -260,11 +260,11 @@ function CommDKP:ViewLimited(raid, standby, raiders)
 
 		if standby then
 			for i=1, #CommDKP:GetTable(CommDKP_Standby, true) do
-				local search = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), CommDKP:GetTable(CommDKP_Standby, true)[i].player)
+				local search = core.DKPTableIndex[CommDKP:GetTable(CommDKP_Standby, true)[i].player]
 				local search2 = CommDKP:Table_Search(tempTable, CommDKP:GetTable(CommDKP_Standby, true)[i].player)
 				
 				if search and not search2 then
-					table.insert(tempTable, CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]])
+					table.insert(tempTable, search)
 				end
 			end
 		end
@@ -690,20 +690,29 @@ local function CreateRow(parent, id) -- Create 3 buttons for each row in the lis
 		return f
 end
 
+function CommDKP:InitializeDKPTableIndex()
+	core.DKPTableIndex = {}
+	for p=1, #CommDKP:GetTable(CommDKP_DKPTable, true) do
+		core.DKPTableIndex[CommDKP:GetTable(CommDKP_DKPTable, true)[p].player] = CommDKP:GetTable(CommDKP_DKPTable, true)[p];
+	end
+end
+
 function CommDKP:DKPTable_Update()
 	if not CommDKP.UIConfig:IsShown() then     -- does not update list if DKP window is closed. Gets done when /dkp is used anyway.
 		return;
 	end
 
+	CommDKP:InitializeDKPTableIndex()
+
 	if core.CurView == "limited" then  -- recreates WorkingTable if in limited view (view raid, core raiders etc)
 		local tempTable = {}
 
 		for i=1, #core.WorkingTable do
-			local search = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), core.WorkingTable[i].player)
+
+			local search = core.DKPTableIndex[core.WorkingTable[i].player];
 
 			if search then
-				
-				table.insert(tempTable, CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]])
+				table.insert(tempTable, search)
 			end
 		end
 		core.WorkingTable = CopyTable(tempTable)
@@ -734,10 +743,10 @@ function CommDKP:DKPTable_Update()
 			local CurPlayer = core.WorkingTable[index].player;
 
 			if core.CenterSort == "rank" then
-				local SetRank = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), core.WorkingTable[index].player, "player")
+				local SetRank = core.DKPTableIndex[core.WorkingTable[index].player]
 				rank, rankIndex = CommDKP:GetGuildRank(core.WorkingTable[index].player)
-				CommDKP:GetTable(CommDKP_DKPTable, true)[SetRank[1][1]].rank = rankIndex or 20;
-				CommDKP:GetTable(CommDKP_DKPTable, true)[SetRank[1][1]].rankName = rank or "None";
+				SetRank.rank = rankIndex or 20;
+				SetRank.rankName = rank or "None";
 			end
 			row.DKPInfo[1]:SetText(core.WorkingTable[index].player)
 			row.DKPInfo[1].rowCounter:SetText(index)
@@ -752,16 +761,16 @@ function CommDKP:DKPTable_Update()
 					row.DKPInfo[2]:SetText(core.WorkingTable[index].spec)
 				else
 					row.DKPInfo[2]:SetText(L["NOSPECREPORTED"])
-					local SetSpec = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), core.WorkingTable[index].player, "player")		-- writes "No Spec Reported" to players profile if spec field doesn't exist
-					CommDKP:GetTable(CommDKP_DKPTable, true)[SetSpec[1][1]].spec = L["NOSPECREPORTED"]
+					local SetSpec = core.DKPTableIndex[core.WorkingTable[index].player]		-- writes "No Spec Reported" to players profile if spec field doesn't exist
+					SetSpec.spec = L["NOSPECREPORTED"]
 				end
 			elseif core.CenterSort == "role" then
 				if core.WorkingTable[index].role then
 					row.DKPInfo[2]:SetText(core.WorkingTable[index].role)
 				else
 					row.DKPInfo[2]:SetText(L["NOROLEDETECTED"])
-					local SetRole = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), core.WorkingTable[index].player, "player")		-- writes "No Role Detected" to players profile if role field doesn't exist
-					CommDKP:GetTable(CommDKP_DKPTable, true)[SetRole[1][1]].role = L["NOROLEDETECTED"]
+					local SetRole = core.DKPTableIndex[core.WorkingTable[index].player]		-- writes "No Role Detected" to players profile if role field doesn't exist
+					SetRole.role = L["NOROLEDETECTED"]
 				end
 			elseif core.CenterSort == "version" then
 				row.DKPInfo[2]:SetText(core.WorkingTable[index].version);

@@ -25,7 +25,7 @@ function CommDKP:AdjustDKP(value)
 			local dkpHistoryString = ""   -- stores list for CommDKP:GetTable(CommDKP_DKPHistory, true)
 			for i=1, #core.SelectedData do
 				local current;
-				local search = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), core.SelectedData[i]["player"])
+				local search = core.DKPTableIndex[core.SelectedData[i]["player"]];
 				if search then
 					if not IsInRaid() then
 						if i < #core.SelectedData then
@@ -35,10 +35,10 @@ function CommDKP:AdjustDKP(value)
 						end
 					end
 					dkpHistoryString = dkpHistoryString..core.SelectedData[i]["player"]..","
-					current = CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]].dkp
-					CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]].dkp = CommDKP_round(tonumber(current + value), core.DB.modes.rounding)
+					current = search.dkp;
+					search.dkp = CommDKP_round(tonumber(current + value), core.DB.modes.rounding)
 					if value > 0 then
-						CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]]["lifetime_gained"] = CommDKP_round(tonumber(CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]]["lifetime_gained"] + value), core.DB.modes.rounding)
+						search["lifetime_gained"] = CommDKP_round(tonumber(search["lifetime_gained"] + value), core.DB.modes.rounding)
 					end
 				end
 			end
@@ -448,10 +448,10 @@ function CommDKP:AdjustDKPTab_Create()
 			local selected = L["AREYOUSURE"].." "..CommDKP_round(CommDKP.ConfigTab2.addDKP:GetNumber(), core.DB.modes.rounding).." "..L["DKPTOFOLLOWING"]..": \n\n";
 
 			for i=1, #core.SelectedData do
-				local classSearch = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), core.SelectedData[i].player)
+				local classSearch = core.DKPTableIndex[core.SelectedData[i].player];
 
 				if classSearch then
-					c = CommDKP:GetCColors(CommDKP:GetTable(CommDKP_DKPTable, true)[classSearch[1][1]].class)
+					c = CommDKP:GetCColors(classSearch.class);
 				else
 					c = { hex="ffffffff" }
 				end

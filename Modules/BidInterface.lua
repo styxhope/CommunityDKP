@@ -36,7 +36,7 @@ local function SortBidTable()
 end
 
 local function RollMinMax_Get()
-  local search = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), UnitName("player"))
+  local search = core.DKPTableIndex[UnitName("player")];
   local minRoll;
   local maxRoll;
 
@@ -44,14 +44,14 @@ local function RollMinMax_Get()
     if core.DB.modes.rolls.min == 0 or core.DB.modes.rolls.min == 1 then
       minRoll = 1;
     else
-      minRoll = CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]].dkp * (core.DB.modes.rolls.min / 100);
+      minRoll = search.dkp * (core.DB.modes.rolls.min / 100);
     end
-    maxRoll = CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]].dkp * (core.DB.modes.rolls.max / 100) + core.DB.modes.rolls.AddToMax;
+    maxRoll = search.dkp * (core.DB.modes.rolls.max / 100) + core.DB.modes.rolls.AddToMax;
   elseif not core.DB.modes.rolls.UsePerc then
     minRoll = core.DB.modes.rolls.min;
 
     if core.DB.modes.rolls.max == 0 then
-      maxRoll = CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]].dkp + core.DB.modes.rolls.AddToMax;
+      maxRoll = search.dkp + core.DB.modes.rolls.AddToMax;
     else
       maxRoll = core.DB.modes.rolls.max + core.DB.modes.rolls.AddToMax;
     end
@@ -156,16 +156,16 @@ function CommDKP_BidInterface_Update()
     for i=1, showRows do
         row = core.BidInterface.bidTable.Rows[i]
         index = offset + i
-        local dkp_total = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), Bids_Submitted[i].player)
+        local dkp_total = core.DKPTableIndex[Bids_Submitted[i].player];
         local c
         if dkp_total then
-          c = CommDKP:GetCColors(CommDKP:GetTable(CommDKP_DKPTable, true)[dkp_total[1][1]].class)
+          c = CommDKP:GetCColors(dkp_total.class)
         else
           local createProfile = CommDKP_Profile_Create(Bids_Submitted[i].player)
 
           if createProfile then
-            dkp_total = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), Bids_Submitted[i].player)
-            c = CommDKP:GetCColors(CommDKP:GetTable(CommDKP_DKPTable, true)[dkp_total[1][1]].class)
+            dkp_total = core.DKPTableIndex[Bids_Submitted[i].player];
+            c = CommDKP:GetCColors(dkp_total.class)
           else       -- if unable to create profile, feeds grey color
             c = { r="aa", g="aa", b="aa"}
           end
@@ -179,7 +179,7 @@ function CommDKP_BidInterface_Update()
             row.Strings[1]:SetTextColor(c.r, c.g, c.b, 1)
             if mode == "Minimum Bid Values" or (mode == "Zero Sum" and core.DB.modes.ZeroSumBidType == "Minimum Bid") then
               row.Strings[2]:SetText(Bids_Submitted[i].bid)
-              row.Strings[3]:SetText(CommDKP_round(CommDKP:GetTable(CommDKP_DKPTable, true)[dkp_total[1][1]].dkp, core.DB.modes.rounding))
+              row.Strings[3]:SetText(CommDKP_round(dkp_total.dkp, core.DB.modes.rounding))
             elseif mode == "Roll Based Bidding" then
               local minRoll;
               local maxRoll;
@@ -188,14 +188,14 @@ function CommDKP_BidInterface_Update()
                 if core.DB.modes.rolls.min == 0 or core.DB.modes.rolls.min == 1 then
                   minRoll = 1;
                 else
-                  minRoll = CommDKP:GetTable(CommDKP_DKPTable, true)[dkp_total[1][1]].dkp * (core.DB.modes.rolls.min / 100);
+                  minRoll = dkp_total.dkp * (core.DB.modes.rolls.min / 100);
                 end
-                maxRoll = CommDKP:GetTable(CommDKP_DKPTable, true)[dkp_total[1][1]].dkp * (core.DB.modes.rolls.max / 100) + core.DB.modes.rolls.AddToMax;
+                maxRoll = dkp_total.dkp * (core.DB.modes.rolls.max / 100) + core.DB.modes.rolls.AddToMax;
               elseif not core.DB.modes.rolls.UsePerc then
                 minRoll = core.DB.modes.rolls.min;
 
                 if core.DB.modes.rolls.max == 0 then
-                  maxRoll = CommDKP:GetTable(CommDKP_DKPTable, true)[dkp_total[1][1]].dkp + core.DB.modes.rolls.AddToMax;
+                  maxRoll = dkp_total.dkp + core.DB.modes.rolls.AddToMax;
                 else
                   maxRoll = core.DB.modes.rolls.max + core.DB.modes.rolls.AddToMax;
                 end
@@ -399,9 +399,9 @@ function CommDKP:CurrItem_Set(item, value, icon, value2)
       if value2 == "MAX" then
         local dkpValue = 0;
 
-        local search = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), UnitName("player"), "player")
+        local search = core.DKPTableIndex[UnitName("player")];
         if search then
-          dkpValue = CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]].dkp;
+          dkpValue = search.dkp;
         end
         core.BidInterface.MaxBid:SetText(dkpValue.." DKP");
       else
@@ -670,9 +670,9 @@ function CommDKP:BidInterface_Create()
     end
 
     local dkp = 0
-    local search = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), UnitName("player"), "player")
+    local search = core.DKPTableIndex[UnitName("player")];
     if search then
-      dkp = CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]].dkp;
+      dkp = search.dkp;
     end
 
     if behavior == "Max DKP" or itemValue == 0  then
@@ -708,9 +708,9 @@ function CommDKP:BidInterface_Create()
     end
 
     local dkp = 0
-    local search = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), UnitName("player"), "player")
+    local search = core.DKPTableIndex[UnitName("player")];
     if search then
-      dkp = CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]].dkp;
+      dkp = search.dkp;
     end
 
     if behavior == "Max DKP" or itemValue == 0  then

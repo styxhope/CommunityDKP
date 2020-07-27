@@ -44,17 +44,17 @@ local function AwardItem(player, cost, boss, zone, loot, reassign)
 	CommDKP:StatusVerify_Update()
 	if core.IsOfficer then
 		if core.DB.modes.costvalue == "Percent" then
-			local search = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), winner);
+			local search = core.DKPTableIndex[winner];
 
 			if core.DB.modes.mode == "Roll Based Bidding" then
 				if search then
-					cost = CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]].dkp * (cost / 100)
+					cost = search.dkp * (cost / 100)
 					cost = CommDKP_round(cost, core.DB.modes.rounding);
 				else
 					print(L["ERROR"])
 				end
 			else
-				cost = CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]].dkp * (cost / 100)
+				cost = search.dkp * (cost / 100)
 				cost = CommDKP_round(cost, core.DB.modes.rounding);
 			end
 		else
@@ -70,7 +70,7 @@ local function AwardItem(player, cost, boss, zone, loot, reassign)
 
 			if search_reassign then
 				local deleted = CopyTable(CommDKP:GetTable(CommDKP_Loot, true)[search_reassign[1][1]])
-				local reimburse = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), deleted.player, "player")
+				local reimburse = core.DKPTableIndex[deleted.player];
 				local newIndex = curOfficer.."-"..curTime-2
 				deleted.cost = deleted.cost * -1
 				deleted.deletes = reassign
@@ -81,8 +81,8 @@ local function AwardItem(player, cost, boss, zone, loot, reassign)
 					deleted.bids = nil;
 				end
 				CommDKP:GetTable(CommDKP_Loot, true)[search_reassign[1][1]].deletedby = newIndex
-				CommDKP:GetTable(CommDKP_DKPTable, true)[reimburse[1][1]].dkp = CommDKP:GetTable(CommDKP_DKPTable, true)[reimburse[1][1]].dkp + deleted.cost
-				CommDKP:GetTable(CommDKP_DKPTable, true)[reimburse[1][1]].lifetime_spent = CommDKP:GetTable(CommDKP_DKPTable, true)[reimburse[1][1]].lifetime_spent + deleted.cost
+				reimburse.dkp = reimburse.dkp + deleted.cost
+				reimburse.lifetime_spent = reimburse.lifetime_spent + deleted.cost
 				table.insert(CommDKP:GetTable(CommDKP_Loot, true), 1, deleted)
 				CommDKP.Sync:SendData("CommDKPDelLoot", CommDKP:GetTable(CommDKP_Loot, true)[1])
 			end
@@ -385,8 +385,8 @@ function CommDKP:AwardConfirm(player, cost, boss, zone, loot, reassign)
 	
 	
 	if player then
-		search = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), player)
-		class = CommDKP:GetCColors(CommDKP:GetTable(CommDKP_DKPTable, true)[search[1][1]].class)
+		search = core.DKPTableIndex[player];
+		class = CommDKP:GetCColors(search.class)
 	end
 
 	for i=1, #CommDKP:GetTable(CommDKP_DKPTable, true) do
@@ -486,11 +486,11 @@ function CommDKP:AwardConfirm(player, cost, boss, zone, loot, reassign)
 			filterName.func = self.SetValue
 			for i=ranges[menuList], ranges[menuList]+19 do
 				if PlayerList[i] then
-					local classSearch = CommDKP:Table_Search(CommDKP:GetTable(CommDKP_DKPTable, true), PlayerList[i])
+					local classSearch = core.DKPTableIndex[PlayerList[i]]
 				    local c;
 
 				    if classSearch then
-				     	c = CommDKP:GetCColors(CommDKP:GetTable(CommDKP_DKPTable, true)[classSearch[1][1]].class)
+				     	c = CommDKP:GetCColors(classSearch.class)
 				    else
 				     	c = { hex="ff444444" }
 				    end

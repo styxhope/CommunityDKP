@@ -47,11 +47,16 @@ function CommDKPFilterChecks(self)         -- sets/unsets check boxes in conjunc
 			core.classFiltered[v] = false;
 		end
 	end
-	PlaySound(808)
+	--PlaySound(808)
 	CommDKP:FilterDKPTable(core.currentSort, "reset");
 end
 
-local function Tab_OnClick(self)
+local function Tab_OnClick(self, mouseButton, mouseDown, usesound)
+
+	if usesound == nil then
+		usesound = true;
+	end
+
 	PanelTemplates_SetTab(self:GetParent(), self:GetID());
 	
 	if self:GetID() > 4 then
@@ -76,8 +81,11 @@ local function Tab_OnClick(self)
 	if (scrollChild) then
 		scrollChild:Hide();
 	end
-	
-	PlaySound(808)
+
+	if usesound then
+		PlaySound(808)
+	end
+
 	self:GetParent().ScrollFrame:SetScrollChild(self.content);
 	self.content:Show();
 	self:GetParent().ScrollFrame:SetVerticalScroll(0)
@@ -110,7 +118,7 @@ function CommDKP:SetTabs(frame, numTabs, width, height, ...)
 		end 
 	end
 	
-	Tab_OnClick(_G[frameName.."Tab1"]);
+	Tab_OnClick(_G[frameName.."Tab1"], nil, nil, false);
 	
 	return unpack(contents);
 end
@@ -122,6 +130,7 @@ function CommDKP:ConfigMenuTabs()
 	---------------------------------------
 	-- TabMenu
 	---------------------------------------
+	print("Before TabMenu: "..tostring(time()));
 	CommDKP.UIConfig.TabMenu = CreateFrame("Frame", "CommDKPCommDKP.ConfigTabMenu", CommDKP.UIConfig);
 	CommDKP.UIConfig.TabMenu:SetPoint("TOPRIGHT", CommDKP.UIConfig, "TOPRIGHT", -25, -25); --Moves the entire tabframe (defaults -25, -25)
 	CommDKP.UIConfig.TabMenu:SetSize(535, 510);  --default: 477,510
@@ -153,7 +162,8 @@ function CommDKP:ConfigMenuTabs()
 	CommDKP.UIConfig.TabMenu.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", CommDKP.UIConfig.TabMenu.ScrollFrame, "BOTTOMRIGHT", -2, 15);
 
 	CommDKP.ConfigTab1, CommDKP.ConfigTab2, CommDKP.ConfigTab3, CommDKP.ConfigTab4, CommDKP.ConfigTab5, CommDKP.ConfigTab6, CommDKP.ConfigTab7 = CommDKP:SetTabs(CommDKP.UIConfig.TabMenu, 7, 533, 490, L["FILTERS"], L["ADJUSTDKP"], L["MANAGE"], L["OPTIONS"], L["LOOTHISTORY"], L["DKPHISTORY"], L["PRICETAB"]);
-
+	print("After TabMenu: "..tostring(time()));
+	print("Before Menu Tab 1: "..tostring(time()));
 	---------------------------------------
 	-- MENU TAB 1
 	---------------------------------------
@@ -240,17 +250,20 @@ function CommDKP:ConfigMenuTabs()
 	CommDKP.ConfigTab1.checkBtn[12]:SetPoint("TOPLEFT", CommDKP.ConfigTab1.checkBtn[11], "TOPRIGHT", 65, 0);
 
 	core.ClassGraph = CommDKP:ClassGraph()  -- draws class graph on tab1
-
+	print("After Menu Tab 1: "..tostring(time()));
+	print("Before Adjust Tab: "..tostring(time()));
 	---------------------------------------
 	-- Adjust DKP TAB
 	---------------------------------------
 	CommDKP:AdjustDKPTab_Create()
-
+	print("After Adjust Tab: "..tostring(time()));
+	print("Before Price Tab: "..tostring(time()));
 	---------------------------------------
 	-- Price  TAB
 	---------------------------------------
 	CommDKP:PriceTab_Create()
-
+	print("After Price Tab: "..tostring(time()));
+	print("Before Manage DKP Tab: "..tostring(time()));
 	---------------------------------------
 	-- Manage DKP TAB
 	---------------------------------------
@@ -263,7 +276,8 @@ function CommDKP:ConfigMenuTabs()
 
 	-- Populate Manage Tab
 	CommDKP:ManageEntries()
-
+	print("After Manage DKP Tab: "..tostring(time()));
+	print("Before Loot History Tab: "..tostring(time()));
 	---------------------------------------
 	-- Loot History TAB
 	---------------------------------------
@@ -282,15 +296,14 @@ function CommDKP:ConfigMenuTabs()
 	-- Populate Loot History (LootHistory.lua)
 	local looter = {}
 	CommDKP.ConfigTab5.looter = looter
-	local lootFrame = {}
-	CommDKP.ConfigTab5.lootFrame = lootFrame
-	for i=1, #CommDKP:GetTable(CommDKP_Loot, true) do
-		CommDKP.ConfigTab5.lootFrame[i] = CreateFrame("Frame", "CommDKPLootHistoryFrame"..i, CommDKP.ConfigTab5);
-	end
+	CommDKP.ConfigTab5.lootFrame = {}
+	
 	if #CommDKP:GetTable(CommDKP_Loot, true) > 0 then
 		CommDKP:LootHistory_Update(L["NOFILTER"])
 		CommDKP:CreateSortBox();
 	end
+	print("After Loot History Tab: "..tostring(time()));
+	print("Before DKP History Tab: "..tostring(time()));
 	---------------------------------------
 	-- DKP History Tab
 	---------------------------------------
@@ -307,7 +320,12 @@ function CommDKP:ConfigMenuTabs()
 	CommDKP.ConfigTab6.inst:SetTextColor(0.3, 0.3, 0.3, 0.7)
 	CommDKP.ConfigTab6.inst:SetPoint("TOPRIGHT", CommDKP.ConfigTab6, "TOPRIGHT", -40, -43);
 	if #CommDKP:GetTable(CommDKP_DKPHistory, true) > 0 then
+		print("Before DKP History Update: "..tostring(time()));
 		CommDKP:DKPHistory_Update()
+		print("After DKP History Update: "..tostring(time()));
 	end
+	print("Before DKP History FilterBox: "..tostring(time()));
 	CommDKP:DKPHistoryFilterBox_Create()
+	print("After DKP History FitlerBox: "..tostring(time()));
+	print("After DKP History Tab: "..tostring(time()));
 end

@@ -476,7 +476,7 @@ function CommDKP:CreateMenu()
 				local dropDownMenuItem = UIDropDownMenu_CreateInfo()
 				dropDownMenuItem.func = self.SetValue
 				dropDownMenuItem.fontObject = "CommDKPSmallCenter"
-			
+				
 				teamList = CommDKP:GetGuildTeamList()
 
 				for i=1, #teamList do
