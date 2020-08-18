@@ -3,6 +3,8 @@ local _G = _G;
 local CommDKP = core.CommDKP;
 local L = core.L;
 
+local PriceListAddon = { loaded = false, found = false, name = nil, addon = nil }
+
 local Bids_Submitted = {};
 local upper = string.upper
 local width, height, numrows = 370, 18, 13
@@ -339,7 +341,60 @@ function CommDKP:WhisperAvailableDKP(name, cmd)
   return;
 end
 
+function CommDKP:InitPriceListAddon()
+	PriceListAddon.loaded = true
+	PriceListAddon.found = false
+
+	local cnt = 0
+	local idx = 0
+	local names = {}
+	for i = 1, GetNumAddOns() do
+		local name, title, notes, enabled, loadable, reason, security = GetAddOnInfo(i)
+		local isCommunityDKPPriceList = (GetAddOnMetadata(i, "X-CommunityDKPPriceList") == "true")
+		if isCommunityDKPPriceList then
+			idx = i
+			cnt = cnt + 1
+			names[cnt] = name
+		end
+	end
+
+	if cnt > 1 then
+		print("More than 1 CommunityDKP pricelist found... " .. table.concat(names, ", "))
+	elseif cnt == 1 then
+		local addon = _G[names[1]]
+		if addon ~= nil then
+			if addon.GetPriceForItem ~= nil then
+				PriceListAddon.loaded = true
+				PriceListAddon.found = true
+				PriceListAddon.addon = addon
+				PriceListAddon.addon:InitPriceList()
+			else
+				print(names[1] .. " not meeting API... #2")
+			end
+		else
+			print(names[1] .. "not meeting API... #1")
+		end
+	end
+end
+
+function CommDKP:GetItemValue(itemLink)
+	if PriceListAddon.loaded == false then
+		CommDKP:InitPriceListAddon()
+	end
+
+	if PriceListAddon.found then
+		local foundPrice = PriceListAddon.addon:GetPriceForItem(itemLink)
+		return foundPrice
+	end
+	return nil
+end
+
 function CommDKP:GetMinBid(itemLink)
+  local itemPrice = CommDKP:GetItemValue(itemLink)
+  if itemPrice ~= nil then
+	  return itemPrice.minBid
+  end
+
   local _,_,_,_,_,_,_,_,loc = GetItemInfo(itemLink);
 
   if loc == "INVTYPE_HEAD" then
@@ -380,6 +435,11 @@ function CommDKP:GetMinBid(itemLink)
 end
 
 function CommDKP:GetMaxBid(itemLink)
+  local itemPrice = CommDKP:GetItemValue(itemLink)
+  if itemPrice ~= nil then
+	  return itemPrice.maxBid
+  end
+
   local _,_,_,_,_,_,_,_,loc = GetItemInfo(itemLink);
 
   if loc == "INVTYPE_HEAD" then
