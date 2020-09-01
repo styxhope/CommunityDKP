@@ -348,6 +348,14 @@ function CommDKP:WhisperAvailableDKP(name, cmd)
   return;
 end
 
+function CommDKP:GetAdditionalText(itemLink)
+  if CommDKPApi.pricelist == nil then
+    return nil
+  end
+
+  return CommDKPApi.pricelist:GetAdditionalText(itemLink)
+end
+
 function CommDKP:GetItemPrice(itemLink)
   if CommDKPApi.pricelist == nil then
     return nil
@@ -670,7 +678,13 @@ local function StartBidding()
 
     if mode == "Minimum Bid Values" or (mode == "Zero Sum" and core.DB.modes.ZeroSumBidType == "Minimum Bid") then
       if core.BiddingWindow.maxBid:GetNumber() ~= 0 then
-        SendChatMessage(L["TAKINGBIDSON"].." "..core.BiddingWindow.item:GetText().." ("..core.BiddingWindow.minBid:GetText().." "..L["DKPMINBID"].." "..core.BiddingWindow.maxBid:GetText().." "..L["DKPMAXBID"]..")", "RAID_WARNING")
+        --SendChatMessage(L["TAKINGBIDSON"].." "..core.BiddingWindow.item:GetText().." ("..core.BiddingWindow.minBid:GetText().." "..L["DKPMINBID"].." "..core.BiddingWindow.maxBid:GetText().." "..L["DKPMAXBID"]..")", "RAID_WARNING")
+        local extraText = CommDKP:GetAdditionalText(CurrItemForBid)
+        if extraText ~= nil then
+          SendChatMessage(L["TAKINGBIDSON"].." "..core.BiddingWindow.item:GetText() .. " : " .. extraText, "RAID_WARNING")
+        else
+          SendChatMessage(L["TAKINGBIDSON"].." "..core.BiddingWindow.item:GetText().." ("..core.BiddingWindow.minBid:GetText().." "..L["DKPMINBID"].." "..core.BiddingWindow.maxBid:GetText().." "..L["DKPMAXBID"]..")", "RAID_WARNING")
+        end
       else
         SendChatMessage(L["TAKINGBIDSON"].." "..core.BiddingWindow.item:GetText().." ("..core.BiddingWindow.minBid:GetText().." "..L["DKPMINBID"]..")", "RAID_WARNING")
       end
